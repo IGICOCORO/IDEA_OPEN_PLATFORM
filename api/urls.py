@@ -17,8 +17,8 @@ router.register("Post", PostViewset)
 router.register("Comments", CommentViewset)
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('doc/', schema_view),
+    path('api/', include(router.urls)),
+    path('', schema_view),
     path('register/', RegisterAPI.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', knox_views.LogoutView.as_view(), name='logout'),
