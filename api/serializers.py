@@ -1,4 +1,6 @@
-from rest_framework import serializers
+from rest_framework import serializers,generics
+from taggit_serializer.serializers import (TagListSerializerField,
+                                           TaggitSerializer)
 
 from .models import *
 
@@ -53,6 +55,22 @@ class LoginSerializer(serializers.Serializer):
         attrs['user'] = user
         return attrs
 
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Posts
+        fields = '__all__'
+
+class PostList(serializers.ModelSerializer):
+    serializer_class = PostSerializer
+    queryset = Posts.objects.all()
+
+    
+class PostsRetrieve(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PostSerializer
+    queryset = Posts.objects.all()
+    lookup_field = 'id'    
+    
+
 class TagsSerializerMini(serializers.ModelSerializer):
     created_by = serializers.PrimaryKeyRelatedField(default=serializers.CurrentUserDefault(), queryset=User.objects.all())
 
@@ -75,38 +93,6 @@ class TagsSerializerMini(serializers.ModelSerializer):
         data = dict()
         data['name'] = ret['name']
         return data
-
-
-class PostSerializer(serializers.ModelSerializer):
-    tags = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
-    update_tags = serializers.ListField(
-        child=serializers.CharField(max_length=30), write_only=True)
-
-    class Meta:
-        model = Posts
-        exclude = ()
-
-    def create(self, validated_data):
-        tag_names = validated_data.pop('update_tags')
-        instance = super().create(validated_data)
-        user = self.context['request'].user
-        tags = []
-        for name in tag_names:
-            tag, created = Tags.objects.get_or_create(name=name, defaults={'created_by': user})
-            tags.append(tag)
-        instance.tags.set(tags)
-        return instance
-
-    def update(self, instance, validated_data):
-        tag_names = validated_data.pop('update_tags')
-        instance = super().update(instance, validated_data)
-        user = self.context['request'].user
-        tags = []
-        for name in tag_names:
-            tag, created = Tags.objects.get_or_create(name=name, defaults={'created_by': user})
-            tags.append(tag)
-        instance.tags.set(tags)
-        return instance
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
